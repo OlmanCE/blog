@@ -1,3 +1,8 @@
+html {
+    scrollbar-color: #44475a #282a36;
+    scroll-behavior: smooth;
+}
+
 /* General */
 body {
     font-family: 'Courier New', monospace;
@@ -6,14 +11,22 @@ body {
     background-color: #300a24;
     color: #e4e441;
     line-height: 1.6;
+    max-width: 100%;
+    overflow-x: hidden;
+    /* Evita el desplazamiento horizontal */
+
 }
 
 section {
     padding: 2rem;
-    margin: 1rem;
+    margin: 1rem auto;
+    max-width: 800px;
+    /* Limitar el ancho máximo del contenido */
     background-color: #1e1e1e;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    word-wrap: break-word;
+    /* Asegurar que el texto largo salte a la siguiente línea */
 }
 
 /* Hero Section */
@@ -21,6 +34,7 @@ section {
     background-color: #282a36;
     text-align: center;
     padding: 2rem 0;
+    max-width: 90%;
 }
 
 h2 {
@@ -92,4 +106,84 @@ nav ul li {
 nav ul li a {
     color: white;
     text-decoration: none;
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 1rem 0;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Estilos para la sección de artículos */
+article {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ddd;
+}
+
+.terminal {
+    background-color: #300a24;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(245, 245, 245, 0.1);
+    max-width: 1000px;
+    /* esto limita el ancho para mejorar la legibilidad */
+    margin: 0 auto;
+    /* con mg centra la sección en la pantalla */
+    word-wrap: break-word;
+    /* se fuerza el ajuste de palabras largas */
+    overflow-wrap: break-word;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    section {
+        padding: 1rem;
+        margin: 0.5rem;
+    }
+
+    header {
+        padding: 1rem;
+    }
+
+    nav ul li {
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .terminal {
+        padding: 10px;
+    }
+
+    pre {
+        font-size: 0.9rem;
+        /* Ajustar el tamaño de la fuente para pantallas pequeñas */
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        /* Reducir el tamaño del encabezado en móviles */
+    }
+
+    p {
+        font-size: 1rem;
+        /* Ajustar el tamaño del texto en móviles */
+    }
+}
+
+/* Ajustes para bloques de código y preformato */
+pre {
+    white-space: pre-wrap;
+    /* Forzar el ajuste del contenido dentro de los límites del contenedor */
+    word-wrap: break-word;
+    /* Evitar que las líneas se desborden */
+    background-color: #44475a;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    /* Para permitir desplazamiento horizontal si es necesario */
 }

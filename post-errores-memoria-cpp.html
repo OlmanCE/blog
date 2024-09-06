@@ -106,7 +106,7 @@
             delete ptr;             // Liberamos la memoria
             
             // El puntero sigue apuntando a la dirección de memoria liberada
-            *ptr = 20;              // Error: estamos accediendo a memoria que ya no es válida</code></pre>
+            *ptr = 20; // Error: estamos accediendo a memoria que ya no es válida</code></pre>
             </p>
 
             <p>
@@ -154,7 +154,8 @@
             <p>
                 A continuación un ejemplo:
             <pre><code>int* arr = new int[5];  // Creamos un array dinámico de 5 elementos
-            arr[5] = 100;           // Error: intentamos escribir en la posición 5, que está fuera del límite (el último índice válido es 4)</code></pre>
+            arr[5] = 100; // Error: intentamos escribir en la posición 5, 
+            que está fuera del límite (el último índice válido es 4)</code></pre>
             </p>
 
             <p>
