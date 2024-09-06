@@ -1,9 +1,75 @@
 /* General */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Courier New', monospace;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: #300a24;
+    color: #e4e441;
+    line-height: 1.6;
+}
+
+section {
+    padding: 2rem;
+    margin: 1rem;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Hero Section */
+.hero {
+    background-color: #282a36;
+    text-align: center;
+    padding: 2rem 0;
+}
+
+h2 {
+    color: #50fa7b;
+    border-bottom: 1px solid #50fa7b;
+    padding-bottom: 10px;
+}
+
+.prompt::before {
+    content: "$ ";
+    color: #50fa7b;
+}
+
+p {
+    margin-bottom: 15px;
+    line-height: 1.8;
+    color: #f8f8f2;
+}
+
+/* Estilo para resaltar código en línea */
+code {
+    background-color: #44475a;
+    color: #f8f8f2;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+/* Ajustes adicionales para mejorar la legibilidad */
+a {
+    color: #8be9fd;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #ff79c6;
+}
+
+/* Estilo para el encabezado principal */
+h1 {
+    color: #50fa7b;
+    text-shadow: 0 0 5px rgba(80, 250, 123, 0.5);
+}
+
+/* Ajuste para el fondo de las secciones */
+.about,
+.articles,
+.contact {
+    background-color: rgba(40, 42, 54, 0.8);
 }
 
 header {
@@ -26,53 +92,4 @@ nav ul li {
 nav ul li a {
     color: white;
     text-decoration: none;
-}
-
-section {
-    padding: 2rem;
-    margin: 1rem;
-    background-color: white;
-    border-radius: 8px;
-}
-
-/* Hero Section */
-.hero {
-    background-color: #eaeaea;
-    text-align: center;
-    padding: 2rem 0;
-}
-
-.about, .articles, .contact {
-    margin-top: 2rem;
-}
-
-/* Artículos */
-article {
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #ddd;
-}
-
-article h3 {
-    color: #333;
-}
-
-article a {
-    color: #007BFF;
-    text-decoration: none;
-}
-
-article a:hover {
-    text-decoration: underline;
-}
-
-/* Footer */
-footer {
-    background-color: #333;
-    color: white;
-    text-align: center;
-    padding: 1rem 0;
-    position: relative;
-    bottom: 0;
-    width: 100%;
 }

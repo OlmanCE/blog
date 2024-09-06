@@ -1,20 +1,203 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Errores Comunes de Memoria en C++</title>
     <link rel="stylesheet" href="./styles.css">
 </head>
+
 <body>
 
     <!-- Contenedor para el header -->
     <div id="header-container"></div>
 
-    <main>
-        <h2>Errores comunes con el uso de la memoria en C++</h2>
-        <p>El manejo de la memoria en C++ puede ser complicado, y muchos programadores, especialmente los nuevos, cometen errores que pueden llevar a fugas de memoria...</p>
-    </main>
+    <div class="terminal">
+        <main>
+            <h2 class="prompt">Errores comunes con el uso de la memoria en C++</h2>
+            <p>
+                El manejo de la memoria en C++ puede ser complicado, y muchos programadores, especialmente los nuevos,
+                cometen errores que pueden llevar a fugas de memoria. El manejo de la memoria es una parte fundamental
+                en la programación en C++, pero también es un área donde ocurren algunos de los errores más comunes,
+                especialmente para quienes están comenzando en este lenguaje. C++ permite un control directo sobre la
+                memoria a través de punteros y la asignación dinámica, lo cual es poderoso, pero también peligroso si no
+                se maneja con cuidado. En este artículo, exploraremos algunos de los errores más comunes en el manejo de
+                memoria en C++ y cómo pueden conducir a problemas graves, como fugas de memoria, corrupción de datos, y
+                fallos en el sistema. Además, veremos algunas buenas prácticas que pueden ayudarte a evitarlos.
+            </p>
+
+            <p>
+                <strong>No liberar la memoria dinámica</strong><br>
+                Uno de los errores más frecuentes en C++ es asignar memoria dinámicamente usando <code>new</code> o
+                <code>malloc()</code> sin liberarla adecuadamente con <code>delete</code> o <code>free()</code>. Este
+                problema se conoce como fuga de memoria y ocurre cuando la memoria que ha sido asignada ya no puede ser
+                utilizada o recuperada, lo que eventualmente puede agotar los recursos de memoria disponibles.
+            </p>
+
+            <p>
+                Veamos algo de código:
+            <pre><code>int* ptr = new int[100];  // Asignación de memoria dinámica
+            // ... Uso del arreglo
+            // ¡Error! No se libera la memoria</code></pre>
+            </p>
+
+            <p>
+                En aplicaciones grandes, las fugas de memoria pueden acumularse, haciendo que el programa consuma cada
+                vez más memoria hasta que el sistema se ralentiza o incluso falla. En sistemas embebidos o aplicaciones
+                críticas, esto puede ser desastroso, causando interrupciones inesperadas o fallas del sistema.
+            </p>
+
+            <p>
+                Una forma de solucionar esto es a través de emparejar cada <code>new</code> con un <code>delete</code> y
+                cada <code>new[]</code> con un <code>delete[]</code>. Las buenas prácticas incluyen el uso de smart
+                pointers, como <code>std::unique_ptr</code> o <code>std::shared_ptr</code>, que manejan automáticamente
+                la liberación de memoria.
+            </p>
+
+            <p>
+                Ante la situación del código anterior se presenta la siguiente solución:
+            <pre><code>int* ptr = new int[100];
+            // ...
+            delete[] ptr;  // Liberacion correcta</code></pre>
+            </p>
+
+            <p>
+                <strong>Fugas de memoria en bucles o recursión</strong><br>
+                Las fugas de memoria en bucles o funciones recursivas son particularmente peligrosas porque pueden
+                provocar un rápido agotamiento de la memoria si no se gestionan adecuadamente. Este tipo de errores
+                ocurre cuando la memoria se asigna en cada iteración o llamada recursiva, pero no se libera
+                adecuadamente al finalizar. Por ejemplo, veamos el siguiente código:
+            <pre><code>for (int i = 0; i &lt; 100; ++i) {
+                int* data = new int[1000];  // Asignación dentro del bucle
+                // ...
+            }  // ¡Error! No se libera la memoria en cada iteracion</code></pre>
+            </p>
+
+            <p>
+                El uso descontrolado de memoria en bucles puede provocar que el programa consuma una cantidad de memoria
+                excesiva, ralentizando el sistema o incluso causando su cierre forzado. Este tipo de problemas son
+                críticos en aplicaciones que se ejecutan durante largos periodos de tiempo, como servidores. (Pronto, en
+                una nueva publicación hablaremos de servidores).
+            </p>
+
+            <p>
+                Para asegurar de que esto no suceda, podemos darle una solución como la siguiente:
+            <pre><code>for (int i = 0; i &lt; 100; ++i) {
+                int* data = new int[1000];
+                // ...
+                delete[] data;  // Liberación correcta en cada iteración
+            }</code></pre>
+            </p>
+
+            <p>
+                Con esto nos aseguramos de liberar la memoria dentro del bucle o al final de cada llamada recursiva,
+                según sea necesario.
+            </p>
+
+            <p>
+                <strong>Puntero Colgante (Dangling Pointer)</strong><br>
+                Un puntero colgante es un puntero que apunta a una ubicación de memoria que ya ha sido liberada. A nivel
+                de memoria, cuando se libera un bloque de memoria con <code>delete</code>, el sistema lo marca como
+                disponible para ser reutilizado, pero el puntero que apuntaba a ese bloque sigue existiendo y, si se
+                intenta acceder a él, puede provocar un comportamiento indefinido. Por ejemplo, visualicemos el
+                siguiente código:
+            <pre><code>int* ptr = new int(10); // Asignamos memoria dinámica para un entero
+            delete ptr;             // Liberamos la memoria
+            
+            // El puntero sigue apuntando a la dirección de memoria liberada
+            *ptr = 20;              // Error: estamos accediendo a memoria que ya no es válida</code></pre>
+            </p>
+
+            <p>
+                <strong>Cómo está funcionando la memoria?</strong><br>
+                <strong>Asignación:</strong> En el momento en que se ejecuta <code>new int(10)</code>, el sistema
+                operativo reserva un bloque de memoria suficiente para almacenar un entero (generalmente 4 bytes en
+                muchas arquitecturas). El puntero <code>ptr</code> se inicializa con la dirección de ese bloque.
+            </p>
+
+            <p>
+                <strong>Liberación:</strong> Al ejecutar <code>delete ptr</code>, el sistema operativo marca la
+                dirección de memoria apuntada por <code>ptr</code> como disponible. Sin embargo, <code>ptr</code> sigue
+                conteniendo esa dirección de memoria.
+            </p>
+
+            <p>
+                <strong>Acceso inválido:</strong> En la línea donde intentamos hacer <code>*ptr = 20;</code>, estamos
+                escribiendo en una zona de memoria que el sistema puede haber reasignado a otro proceso o para otro uso.
+                Este comportamiento es impredecible, ya que podríamos sobrescribir datos críticos o provocar una
+                violación de acceso.
+            </p>
+
+            <p>
+                Una forma de evitar este error es a través de:
+            <pre><code>delete ptr;
+            ptr = nullptr;  // Ahora ptr no apunta a ninguna ubicación válida</code></pre>
+            </p>
+
+            <p>
+                Después de liberar la memoria, debemos establecer el puntero a <code>nullptr</code> (puntero nulo), lo
+                cual indica que no está apuntando a ningún bloque de memoria válido. Esto asegura que si intentamos
+                acceder a través de <code>ptr</code>, se detectará un acceso a un puntero nulo, lo cual es más fácil de
+                manejar que un acceso a memoria ya liberada.
+            </p>
+
+            <p>
+                <strong>Acceso Fuera de los Límites (Out of Bounds Access)</strong><br>
+                Este error ocurre cuando se intenta acceder a una posición de un array dinámico que está fuera de su
+                tamaño asignado. El problema con C++ es que no hay verificación automática de los límites de un array,
+                por lo que si intentamos acceder a una posición fuera del rango asignado, el programa puede leer o
+                escribir en áreas de memoria no deseadas, lo que puede causar corrupción de datos o fallos en el
+                sistema.
+            </p>
+
+            <p>
+                A continuación un ejemplo:
+            <pre><code>int* arr = new int[5];  // Creamos un array dinámico de 5 elementos
+            arr[5] = 100;           // Error: intentamos escribir en la posición 5, que está fuera del límite (el último índice válido es 4)</code></pre>
+            </p>
+
+            <p>
+                <strong>Cómo funciona a nivel de memoria?</strong><br>
+                <strong>La asignación:</strong> Cuando se ejecuta <code>new int[5]</code>, el sistema reserva un bloque
+                de memoria continua suficiente para almacenar 5 enteros. Si cada entero ocupa 4 bytes, el bloque tendrá
+                20 bytes. El puntero <code>arr</code> apunta a la primera dirección de este bloque.
+            </p>
+
+            <p>
+                <strong>Acceso fuera de los límites:</strong> En C++, no se verifica si el índice proporcionado está
+                dentro del rango válido para el array. Por lo tanto, cuando se accede a <code>arr[5]</code>, el programa
+                simplemente calcula la dirección de memoria como si fuera una parte del array:
+            <pre><code>Dirección de arr[0]: 0x1000 (por ejemplo).
+            Dirección de arr[5]: 0x1000 + 5 * 4 = 0x1014.</code></pre>
+            </p>
+
+            <p>
+                El problema es que la posición <code>arr[5]</code> está fuera de los límites asignados por el sistema.
+                En ese espacio de memoria puede haber datos de otra parte del programa o incluso de otro proceso, lo que
+                puede resultar en corrupción de memoria.
+            </p>
+
+            <p>
+                Esto nos puede conducir a ciertas consecuencias, dado que este tipo de error puede ser difícil de
+                depurar porque no siempre produce un fallo inmediato. Si escribimos en una dirección fuera del límite,
+                podríamos corromper otras partes del programa o incluso otras estructuras de datos, lo que llevaría a un
+                comportamiento extraño más adelante.
+            </p>
+
+            <p>
+                Lo primero que debemos tener en cuenta para evitar este tipo de errores es tener cuidado con los índices
+                y asegurarse de que siempre se esté dentro de los límites del array. En lugar de usar arrays "crudos",
+                es recomendable usar estructuras de datos seguras como <code>std::vector</code>, que proporcionan
+                verificación de límites en tiempo de ejecución. Por ejemplo, veamos el siguiente código como solución al
+                anterior:
+            <pre><code>#include &lt;vector&gt;
+            
+            std::vector<int> arr(5);  // Creamos un vector con 5 elementos
+            arr[5] = 100;  // Esto generará una excepción en tiempo de ejecución (out_of_range)</code></pre>
+            </p>
+        </main>
+    </div>
 
     <footer>
         <p>&copy; 2024 Mi Blog Personal</p>
@@ -23,4 +206,5 @@
     <!-- Script para cargar el header -->
     <script src="./header.html"></script>
 </body>
+
 </html>
