@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La importancia del SOC en la ciberseguridad moderna — Linux &amp; Ciberseguridad</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+    <div id="header-container"></div>
+
+    <div class="terminal">
+        <main>
+            <div class="post-header">
+                <h2 class="prompt">La importancia del SOC en la ciberseguridad moderna</h2>
+                <p class="post-meta">
+                    Publicado el 18 de abril, 2026 &nbsp;|&nbsp;
+                    <span class="tag">SOC</span>
+                    <span class="tag">Ciberseguridad</span>
+                    <span class="tag">Blue Team</span>
+                    <span class="tag">SIEM</span>
+                </p>
+            </div>
+
+            <p>
+                El panorama de amenazas cibernéticas ha cambiado radicalmente en la última década. Ransomware,
+                amenazas persistentes avanzadas (APT), phishing dirigido y ataques a la cadena de suministro son
+                solo algunas de las realidades que enfrentan hoy las organizaciones. En este contexto, contar con
+                un equipo dedicado a la vigilancia continua de la seguridad ya no es opcional: es una necesidad
+                operacional. Ese equipo es el SOC.
+            </p>
+
+            <h3>¿Qué es un Centro de Operaciones de Seguridad?</h3>
+            <p>
+                Un SOC (Security Operations Center) es una unidad centralizada que reúne personas, procesos y
+                tecnología con un único objetivo: monitorear, detectar, analizar y responder a incidentes de
+                seguridad en tiempo real. Funciona como el sistema nervioso de la ciberseguridad corporativa,
+                dando visibilidad sobre todo lo que ocurre en la infraestructura digital de una organización.
+            </p>
+            <p>
+                A diferencia de un equipo de TI tradicional que reacciona cuando algo falla, el SOC opera de
+                forma proactiva y continua. Su premisa fundamental es sencilla: no puedes defender lo que no
+                puedes ver.
+            </p>
+
+            <h3>Funciones principales</h3>
+            <p>
+                <strong>Monitoreo 24/7:</strong> Los analistas del SOC supervisan constantemente el tráfico de
+                red, los logs del sistema y las alertas de seguridad. Los atacantes no respetan horarios de
+                oficina; por eso la vigilancia continua es la base de todo lo demás.
+            </p>
+            <p>
+                <strong>Detección de amenazas:</strong> Mediante correlación de eventos de múltiples fuentes
+                (servidores, endpoints, firewalls, aplicaciones), el SOC identifica patrones sospechosos que
+                individualmente parecerían inofensivos pero en conjunto revelan un ataque en curso.
+            </p>
+            <p>
+                <strong>Respuesta a incidentes:</strong> Cuando se confirma un incidente, se ejecutan playbooks
+                de respuesta: contención, erradicación y recuperación. La velocidad en esta fase es crítica;
+                cada hora que un atacante permanece en el sistema aumenta exponencialmente el daño.
+            </p>
+            <p>
+                <strong>Gestión de vulnerabilidades:</strong> Identificar y priorizar debilidades antes de que
+                sean explotadas es la faceta proactiva del SOC. No todo puede parchearse de inmediato, pero sí
+                se puede gestionar el riesgo con información.
+            </p>
+
+            <h3>Los niveles de analistas</h3>
+            <p>
+                Un SOC maduro organiza a sus analistas en tres niveles según su experiencia y las tareas que realizan:
+            </p>
+            <pre><code>Tier 1 — Triage
+  Monitorean alertas, clasifican incidentes, escalan casos complejos.
+  Herramientas: SIEM dashboards, ticketing, reglas de correlación básicas.
+
+Tier 2 — Investigación
+  Analizan incidentes en profundidad, realizan threat hunting, gestionan
+  la respuesta activa. Mayor autonomía y contexto técnico.
+
+Tier 3 — Expertos / Threat Intel
+  Investigan amenazas avanzadas, realizan análisis forense, desarrollan
+  nuevas capacidades de detección y retroalimentan al equipo.</code></pre>
+
+            <h3>Herramientas del SOC</h3>
+            <p>
+                El ecosistema de herramientas en un SOC puede ser extenso, pero hay algunas que son
+                fundamentales en cualquier implementación:
+            </p>
+            <pre><code>SIEM   (Splunk, IBM QRadar, Elastic SIEM)    → correlación y visibilidad centralizada
+IDS/IPS (Snort, Suricata, Zeek)             → detección de intrusiones en red
+EDR    (CrowdStrike Falcon, SentinelOne)    → protección y visibilidad en endpoints
+SOAR   (Palo Alto XSOAR, Splunk SOAR)      → automatización de respuesta a incidentes
+TI     (MISP, OpenCTI, VirusTotal)         → inteligencia de amenazas y contexto</code></pre>
+            <p>
+                La integración entre estas herramientas es lo que realmente potencia un SOC. Un SIEM que
+                recibe feeds de threat intelligence y dispara automáticamente un playbook en el SOAR puede
+                reducir el tiempo de respuesta de horas a minutos.
+            </p>
+
+            <h3>¿Por qué el SOC importa hoy?</h3>
+            <p>
+                Según el IBM Cost of a Data Breach Report, el costo promedio global de una brecha de datos
+                supera los 4 millones de dólares. Sin embargo, las organizaciones con un SOC maduro detectan
+                y contienen incidentes significativamente más rápido, reduciendo ese impacto de forma
+                sustancial. El tiempo medio de detección (MTTD) y el tiempo medio de contención (MTTC) son
+                los indicadores que el SOC busca mejorar de forma continua.
+            </p>
+            <p>
+                Además, marcos regulatorios como ISO 27001, NIST CSF y NIS2 en Europa exigen capacidades
+                documentadas de monitoreo y respuesta a incidentes, algo que un SOC operativo proporciona
+                de forma natural.
+            </p>
+
+            <h3>Por dónde empezar si te interesa el SOC</h3>
+            <p>
+                Para quienes quieren adentrarse en el trabajo de analista SOC, existen plataformas prácticas
+                que permiten aprender haciendo:
+            </p>
+            <pre><code>TryHackMe         → rutas estructuradas de Blue Team y SOC Analyst
+Hack The Box      → laboratorios de análisis forense y detección
+Blue Team Labs    → escenarios realistas de respuesta a incidentes
+LetsDefend        → simulaciones de SOC con alertas reales</code></pre>
+            <p>
+                Complementar la práctica con conocimiento de protocolos de red, sistemas operativos Linux y
+                expresiones regulares para análisis de logs hace una diferencia notable desde el primer día.
+            </p>
+
+            <h3>Conclusión</h3>
+            <p>
+                El SOC representa la diferencia entre reaccionar ante un desastre y tener visibilidad y
+                control sobre la seguridad de una organización. No es un lujo reservado a grandes
+                corporaciones: con las herramientas open source disponibles hoy, incluso equipos pequeños
+                pueden construir capacidades SOC funcionales. La clave está en la combinación correcta de
+                personas bien entrenadas, procesos documentados y tecnología integrada.
+            </p>
+            <p>
+                En próximas publicaciones profundizaremos en la configuración práctica de un SIEM open source
+                y en cómo construir reglas de detección efectivas.
+            </p>
+
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Linux &amp; Ciberseguridad | <code>echo "Hecho con ☕ y música"</code></p>
+    </footer>
+
+    <script src="./header.js"></script>
+</body>
+
+</html>
