@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCP/IP: El Viaje de un Paquete — Linux &amp; Ciberseguridad</title>
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+        .soc-callout {
+            background: rgba(255,184,108,0.07);
+            border-left: 3px solid #ffb86c;
+            padding: 0.7rem 1rem;
+            border-radius: 0 6px 6px 0;
+            margin: 1rem 0;
+            font-size: 0.86rem;
+            color: #f8f8f2;
+        }
+        .soc-callout strong { color: #ffb86c; }
+
+        .diagram-box {
+            background: #282a36;
+            border: 1px solid #44475a;
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin: 1rem 0;
+        }
+
+        .btn {
+            padding: 0.32rem 0.85rem;
+            border-radius: 4px;
+            border: 1px solid #44475a;
+            background: transparent;
+            color: #f8f8f2;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .btn:hover        { border-color: #8be9fd; color: #8be9fd; }
+        .btn.active       { border-color: #8be9fd; color: #8be9fd; background: rgba(139,233,253,0.1); }
+        .btn-green        { border-color: #50fa7b !important; color: #50fa7b !important; }
+        .btn-green:hover  { background: rgba(80,250,123,0.1) !important; }
+        .btn-orange       { border-color: #ffb86c !important; color: #ffb86c !important; }
+        .btn-orange:hover { background: rgba(255,184,108,0.1) !important; }
+
+        /* ── CAPAS ── */
+        .mode-btns { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+
+        .layer-card {
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.15s;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 0.3rem;
+        }
+        .layer-card:hover { transform: translateX(3px); }
+
+        .layer-header-row {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 0.9rem;
+            gap: 0.7rem;
+        }
+        .layer-badge {
+            width: 22px; height: 22px; border-radius: 50%;
+            font-size: 0.7rem; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            color: #1e1e1e; flex-shrink: 0;
+        }
+        .layer-name   { font-weight: bold; font-size: 0.88rem; flex: 1; }
+        .layer-protos { font-size: 0.7rem; color: #6272a4; }
+        .layer-chev   { font-size: 0.68rem; color: #6272a4; transition: transform 0.25s; margin-left: 4px; }
+        .layer-card.open .layer-chev { transform: rotate(90deg); }
+
+        .layer-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; background: rgba(0,0,0,0.22); }
+        .layer-card.open .layer-body { max-height: 320px; }
+        .layer-body-inner { padding: 0.65rem 0.9rem 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); }
+        .layer-body-inner p   { margin: 0 0 0.45rem; color: #f8f8f2; font-size: 0.82rem; line-height: 1.6; }
+        .layer-body-inner pre { background: rgba(0,0,0,0.4); border-left: 2px solid; border-radius: 0 4px 4px 0; padding: 0.45rem 0.65rem; font-size: 0.75rem; margin: 0.4rem 0 0; color: #f8f8f2; }
+        .soc-mini { font-size: 0.74rem; color: #ffb86c; margin-top: 0.45rem; padding-left: 0.5rem; border-left: 2px solid #ffb86c; }
+
+        .pkt-wrap  { margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.18); border: 1px solid #44475a; border-radius: 6px; }
+        .pkt-lbl   { font-size: 0.7rem; color: #6272a4; margin-bottom: 0.45rem; }
+        .pkt-bar   { display: flex; border-radius: 4px; overflow: hidden; min-height: 34px; }
+        .pkt-seg   { display: flex; align-items: center; justify-content: center; padding: 4px 6px; font-size: 0.65rem; font-weight: bold; text-align: center; white-space: nowrap; transition: all 0.3s; color: #1e1e1e; }
+        .pkt-seg.data { flex: 1; background: #44475a; color: #f8f8f2; }
+        .pkt-seg.hl   { outline: 2px solid white; z-index: 1; position: relative; }
+        .pkt-foot  { display: flex; justify-content: space-between; font-size: 0.68rem; color: #6272a4; margin-top: 0.35rem; }
+
+        /* ── HANDSHAKE ── */
+        .hs-controls { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+        .hs-wrap     { overflow-x: auto; }
+
+        .hs-grid {
+            display: grid;
+            grid-template-columns: 90px 1fr 90px;
+            gap: 0;
+            min-width: 280px;
+        }
+        .hs-actor { display: flex; flex-direction: column; align-items: center; }
+        .hs-actor-box { padding: 0.35rem 0.6rem; border-radius: 4px; font-weight: bold; font-size: 0.82rem; text-align: center; }
+        .hs-actor-line { width: 2px; flex: 1; background: #44475a; min-height: 220px; }
+
+        .hs-mid { position: relative; min-height: 220px; }
+
+        .hs-step {
+            position: absolute; width: 100%;
+            opacity: 0; transform: translateY(-6px);
+            transition: opacity 0.35s, transform 0.35s;
+            pointer-events: none;
+        }
+        .hs-step.vis { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+        .hs-arrow { display: flex; align-items: center; gap: 3px; }
+        .hs-line  { flex: 1; height: 2px; }
+        .hs-tag   { padding: 1px 7px; border-radius: 3px; font-size: 0.72rem; font-weight: bold; color: #1e1e1e; white-space: nowrap; }
+        .hs-tip-r::after  { content: ' ▶'; }
+        .hs-tip-l::before { content: '◀ '; }
+        .hs-det { font-size: 0.7rem; color: #6272a4; text-align: center; margin-top: 2px; }
+
+        .hs-ok { text-align: center; padding: 0.4rem; border-radius: 4px; background: rgba(80,250,123,0.1); border: 1px solid #50fa7b; color: #50fa7b; font-size: 0.82rem; margin-top: 0.6rem; opacity: 0; transition: opacity 0.4s; }
+        .hs-ok.vis { opacity: 1; }
+
+        #hs-info { margin-top: 0.7rem; font-size: 0.8rem; color: #6272a4; min-height: 36px; }
+
+        /* ── SLIDING WINDOW ── */
+        .sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+        @media (max-width: 520px) { .sw-grid { grid-template-columns: 1fr; } }
+
+        .sw-panel { background: rgba(0,0,0,0.18); border: 1px solid #44475a; border-radius: 6px; padding: 0.8rem; }
+        .sw-panel h4 { color: #8be9fd; margin: 0 0 0.55rem; font-size: 0.82rem; }
+
+        input[type=range].sw-slider { width: 100%; accent-color: #8be9fd; margin: 0.25rem 0; }
+
+        .sw-pkts { display: flex; flex-wrap: wrap; gap: 4px; min-height: 42px; margin: 0.55rem 0; }
+        .sw-pkt  { width: 32px; height: 32px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; transition: all 0.3s; border: 1px solid; }
+        .sw-pkt.acked    { background: rgba(80,250,123,0.2);   border-color: #50fa7b; color: #50fa7b; }
+        .sw-pkt.inflight { background: rgba(139,233,253,0.2);  border-color: #8be9fd; color: #8be9fd; animation: sw-pulse 1s ease-in-out infinite; }
+        .sw-pkt.waiting  { background: rgba(68,71,90,0.4);     border-color: #44475a; color: #6272a4; }
+        .sw-pkt.dropped  { background: rgba(255,85,85,0.25);   border-color: #ff5555; color: #ff5555; }
+
+        @keyframes sw-pulse { 0%,100% { box-shadow: 0 0 4px rgba(139,233,253,0.3); } 50% { box-shadow: 0 0 10px rgba(139,233,253,0.7); } }
+
+        .sw-buf  { height: 14px; background: #44475a; border-radius: 7px; overflow: hidden; margin: 0.4rem 0; }
+        .sw-fill { height: 100%; border-radius: 7px; background: linear-gradient(90deg,#50fa7b,#8be9fd); transition: width 0.4s ease; }
+        .sw-stat { font-size: 0.75rem; color: #6272a4; margin: 2px 0; }
+        .sw-stat span { color: #f8f8f2; }
+
+        .legend      { display: flex; flex-wrap: wrap; gap: 0.55rem; font-size: 0.72rem; margin-top: 0.4rem; }
+        .legend-item { display: flex; align-items: center; gap: 4px; color: #6272a4; }
+        .legend-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ── ROUTING ── */
+        .topo-wrap { overflow-x: auto; padding-bottom: 0.4rem; }
+        .topo-row  { display: flex; align-items: center; min-width: 340px; padding: 0.4rem 0; }
+
+        .topo-node { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; min-width: 58px; }
+        .topo-icon { width: 46px; height: 46px; border-radius: 8px; border: 2px solid #44475a; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; background: #282a36; transition: all 0.25s; }
+        .topo-node:hover .topo-icon  { border-color: #8be9fd; background: rgba(139,233,253,0.08); }
+        .topo-node.sel .topo-icon    { border-color: #8be9fd; background: rgba(139,233,253,0.12); box-shadow: 0 0 10px rgba(139,233,253,0.3); }
+        .topo-node.pkt .topo-icon    { border-color: #50fa7b; background: rgba(80,250,123,0.15); box-shadow: 0 0 13px rgba(80,250,123,0.45); }
+        .topo-lbl { font-size: 0.68rem; color: #f8f8f2; text-align: center; }
+        .topo-ip  { font-size: 0.62rem; color: #6272a4; }
+
+        .topo-edge { flex: 1; height: 2px; background: #44475a; min-width: 18px; transition: all 0.3s; }
+        .topo-edge.act { background: #50fa7b; box-shadow: 0 0 6px rgba(80,250,123,0.5); }
+
+        .rt-box   { background: rgba(0,0,0,0.22); border: 1px solid #44475a; border-radius: 6px; padding: 0.75rem; margin-top: 0.75rem; font-size: 0.78rem; min-height: 88px; }
+        .rt-title { color: #8be9fd; font-weight: bold; margin-bottom: 0.4rem; font-size: 0.8rem; }
+        .rt-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        .rt-table th { color: #6272a4; font-weight: normal; text-align: left; padding: 2px 5px; border-bottom: 1px solid #44475a; }
+        .rt-table td { padding: 3px 5px; color: #f8f8f2; }
+        .rt-table tr.match td { background: rgba(80,250,123,0.08); color: #50fa7b; }
+
+        .ttl-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.75rem; padding: 0.55rem 0.8rem; background: rgba(0,0,0,0.18); border-radius: 6px; border: 1px solid #44475a; }
+        .ttl-num { font-size: 1.7rem; font-weight: bold; color: #50fa7b; min-width: 48px; transition: color 0.3s; font-family: 'Courier New', monospace; }
+        .ttl-num.warn   { color: #ffb86c; }
+        .ttl-num.danger { color: #ff5555; }
+        .ttl-info p    { margin: 0; color: #6272a4; font-size: 0.73rem; line-height: 1.5; }
+        .ttl-info strong { color: #f8f8f2; display: block; margin-bottom: 2px; font-size: 0.8rem; }
+
+        #route-log { margin-top: 0.7rem; font-size: 0.76rem; color: #6272a4; min-height: 18px; }
+    </style>
+</head>
+
+<body>
+    <div id="header-container"></div>
+
+    <div class="terminal">
+        <main>
+            <div class="post-header">
+                <h2 class="prompt">TCP/IP: El Viaje de un Paquete</h2>
+                <p class="post-meta">
+                    20 de Abril, 2026 &nbsp;|&nbsp;
+                    <span class="tag">TCP/IP</span>
+                    <span class="tag">Redes</span>
+                    <span class="tag">SOC</span>
+                    <span class="tag">Fundamentos</span>
+                </p>
+            </div>
+
+            <p>
+                Antes de detectar una intrusión, un analista SOC necesita entender cómo viajan los datos.
+                TCP/IP no es solo un protocolo — es el lenguaje universal de Internet. Este post
+                convierte esa teoría en algo visual e interactivo: haz clic, mueve sliders, observa.
+            </p>
+
+            <!-- ══════════════════════════════════════════
+                 SECCIÓN 1: LAS 4 CAPAS
+            ══════════════════════════════════════════ -->
+            <h3>Las 4 capas del modelo TCP/IP</h3>
+            <p>
+                Imagina que mandas una carta al extranjero: escribes el contenido (Aplicación), la metes en un sobre
+                con número de tracking (Transporte), el sobre lleva la dirección completa (Internet), y el cartero
+                la lleva de buzón en buzón (Enlace). Cada capa solo habla con su par en el otro extremo.
+            </p>
+
+            <div class="diagram-box">
+                <div class="mode-btns">
+                    <button class="btn active" id="btn-send" onclick="setMode('send')">↓ Enviando — Encapsulación</button>
+                    <button class="btn"        id="btn-recv" onclick="setMode('recv')">↑ Recibiendo — Desencapsulación</button>
+                </div>
+                <div id="layer-stack"></div>
+                <div class="pkt-wrap">
+                    <div class="pkt-lbl">Estructura del frame completo — haz clic en una capa para destacar su header</div>
+                    <div class="pkt-bar" id="pkt-bar"></div>
+                    <div class="pkt-foot">
+                        <span id="pkt-fl">↑ Datos de la aplicación</span>
+                        <span id="pkt-fr">Frame Ethernet completo ↓</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="soc-callout">
+                <strong>Perspectiva SOC:</strong> Cada capa deja huellas distintas. Un SIEM correlaciona desde el
+                payload HTTP (capa Aplicación) hasta la MAC de origen (capa Enlace). Saber qué dato vive en qué
+                capa determina qué puedes detectar y con qué herramienta.
+            </div>
+
+            <!-- ══════════════════════════════════════════
+                 SECCIÓN 2: THREE-WAY HANDSHAKE
+            ══════════════════════════════════════════ -->
+            <h3>Three-Way Handshake: Cómo nace una conexión TCP</h3>
+            <p>
+                Antes de transferir un byte de datos, TCP sincroniza los <em>números de secuencia</em> entre
+                cliente y servidor con 3 mensajes. Estos números garantizan orden y detección de pérdidas.
+            </p>
+
+            <div class="diagram-box">
+                <div class="hs-controls">
+                    <button class="btn btn-green"  onclick="hsNext()">▶ Siguiente paso</button>
+                    <button class="btn"            onclick="hsReset()">↺ Reiniciar</button>
+                </div>
+                <div class="hs-wrap">
+                    <div class="hs-grid" id="hs-grid"></div>
+                </div>
+                <div class="hs-ok" id="hs-ok">✓ Conexión establecida — listo para transmitir datos</div>
+                <div id="hs-info">Presiona "Siguiente paso" para iniciar el handshake.</div>
+            </div>
+
+            <div class="soc-callout">
+                <strong>SYN Flood Attack:</strong> Un atacante envía miles de SYN sin completar el handshake.
+                El servidor reserva memoria por cada conexión "a medias" hasta agotarla (DoS).
+                Señal en SIEM: alta tasa de SYN sin ACK correspondiente desde una misma IP.
+            </div>
+
+            <!-- ══════════════════════════════════════════
+                 SECCIÓN 3: CONTROL DE FLUJO
+            ══════════════════════════════════════════ -->
+            <h3>Control de Flujo: La Ventana Deslizante</h3>
+            <p>
+                TCP no espera confirmación de cada paquete — sería lentísimo. Usa una
+                <em>ventana deslizante</em>: el emisor mantiene hasta N paquetes "en vuelo".
+                El receptor ajusta ese N según su buffer disponible.
+            </p>
+
+            <div class="diagram-box">
+                <div class="sw-grid">
+                    <div class="sw-panel">
+                        <h4>Emisor</h4>
+                        <div class="sw-stat">
+                            Ventana: <span><strong id="sw-win-val">4</strong> paquetes</span>
+                        </div>
+                        <input type="range" id="sw-slider" class="sw-slider" min="1" max="8" value="4"
+                               oninput="swSetWindow(this.value)">
+                        <div class="sw-pkts" id="sw-sender"></div>
+                        <div class="legend">
+                            <span class="legend-item"><span class="legend-dot" style="background:#50fa7b"></span>Confirmado</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:#8be9fd"></span>En vuelo</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:#44475a"></span>En espera</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:#ff5555"></span>Perdido</span>
+                        </div>
+                    </div>
+                    <div class="sw-panel">
+                        <h4>Receptor (Buffer)</h4>
+                        <div class="sw-stat">Ocupación: <span id="sw-buf-pct">0%</span></div>
+                        <div class="sw-buf"><div class="sw-fill" id="sw-fill" style="width:0%"></div></div>
+                        <div class="sw-stat">Paquetes recibidos: <span id="sw-recv-cnt">0</span></div>
+                        <div class="sw-stat">Ventana anunciada (rwnd): <span id="sw-rwnd">4</span></div>
+                        <div class="sw-pkts" id="sw-receiver"></div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.8rem;">
+                    <button class="btn btn-green"  onclick="swSend()">▶ Enviar ventana</button>
+                    <button class="btn btn-orange" onclick="swDrop()">✕ Simular pérdida</button>
+                    <button class="btn"            onclick="swReset()">↺ Reiniciar</button>
+                </div>
+            </div>
+
+            <div class="soc-callout">
+                <strong>Relevancia SOC:</strong> Una ventana TCP atascada en 0 (<code>tcp.window_size == 0</code>)
+                puede indicar un receptor saturado, un ataque DoS en curso o un host comprometido consumiendo
+                recursos. Wireshark y Zeek reportan este campo en cada captura.
+            </div>
+
+            <!-- ══════════════════════════════════════════
+                 SECCIÓN 4: ENRUTAMIENTO
+            ══════════════════════════════════════════ -->
+            <h3>Enrutamiento: Cómo los paquetes encuentran su camino</h3>
+            <p>
+                Cada router tiene una tabla de rutas. Al llegar un paquete, busca la entrada
+                con el prefijo más específico que coincida — <em>Longest Prefix Match</em>.
+                El paquete salta de router en router y el TTL decrece en cada salto.
+            </p>
+
+            <div class="diagram-box">
+                <p style="font-size:0.78rem; color:#6272a4; margin:0 0 0.7rem;">
+                    Haz clic en un router para ver su tabla de rutas. Luego usa "Siguiente salto".
+                </p>
+                <div class="topo-wrap">
+                    <div class="topo-row" id="topo-row"></div>
+                </div>
+                <div class="rt-box">
+                    <div class="rt-title" id="rt-title">Selecciona un router para ver su tabla de rutas</div>
+                    <div id="rt-content"></div>
+                </div>
+                <div class="ttl-row">
+                    <div>
+                        <div style="font-size:0.68rem; color:#6272a4; margin-bottom:2px;">TTL</div>
+                        <div class="ttl-num" id="ttl-num">64</div>
+                    </div>
+                    <div class="ttl-info">
+                        <strong id="ttl-status">Paquete en origen</strong>
+                        <p>Disminuye 1 en cada router. Si llega a 0, el paquete se descarta
+                        y se responde con ICMP "Time Exceeded" — la base de <code>traceroute</code>.</p>
+                    </div>
+                </div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.8rem;">
+                    <button class="btn btn-green" onclick="routeNext()">▶ Siguiente salto</button>
+                    <button class="btn"           onclick="routeReset()">↺ Reiniciar</button>
+                </div>
+                <div id="route-log"></div>
+            </div>
+
+            <div class="soc-callout">
+                <strong>TTL en seguridad:</strong> El TTL inicial delata el SO de origen (Linux ≈ 64,
+                Windows ≈ 128). Un TTL muy bajo al llegar puede significar muchos saltos — útil para detectar
+                rutas anómalas o tráfico de botnets. Los atacantes usan <code>traceroute</code> (explotando TTL)
+                para mapear la red en fase de reconocimiento.
+            </div>
+
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Linux &amp; Ciberseguridad | <code>echo "Hecho con ☕ y música"</code></p>
+    </footer>
+
+    <script src="./header.js"></script>
+    <script>
+    /* ═══════════════════════════════════════════════════════
+       SECCIÓN 1 — CAPAS TCP/IP
+    ═══════════════════════════════════════════════════════ */
+    const LAYERS = [
+        {
+            id: 'app', color: '#bd93f9',
+            name: 'Aplicación',
+            protos: 'HTTP · DNS · FTP · SSH · SMTP',
+            desc: 'Prepara los datos que el usuario quiere enviar. No sabe nada de IPs ni puertos — solo entiende formatos de aplicación.',
+            soc:  'Logs HTTP, consultas DNS anómalas y protocolos no estándar son indicadores clave de compromiso en esta capa.',
+            ex:   'GET /login HTTP/1.1\nHost: banco.com\nCookie: session=abc123',
+            seg:  'HTTP'
+        },
+        {
+            id: 'trans', color: '#8be9fd',
+            name: 'Transporte',
+            protos: 'TCP · UDP',
+            desc: 'Divide datos en segmentos, asigna puertos y garantiza entrega ordenada (TCP) o prioriza velocidad sin confirmación (UDP).',
+            soc:  'Escaneos de puertos, SYN floods y conexiones a puertos C2 son anomalías detectables aquí.',
+            ex:   'Src Port: 54321\nDst Port:    80\nSeq:      1000\nFlags:     SYN\nWindow:  65535',
+            seg:  'TCP HDR'
+        },
+        {
+            id: 'net', color: '#50fa7b',
+            name: 'Internet (Red)',
+            protos: 'IP · ICMP · ARP',
+            desc: 'Añade IPs de origen y destino para enrutar el paquete entre redes. El TTL limita la cantidad de saltos posibles.',
+            soc:  'IP spoofing, ICMP tunneling y manipulación de TTL son técnicas de evasión visibles en esta capa.',
+            ex:   'Src IP: 192.168.1.10\nDst IP:    8.8.8.8\nTTL:            64\nProtocol: 6 (TCP)',
+            seg:  'IP HDR'
+        },
+        {
+            id: 'link', color: '#ffb86c',
+            name: 'Enlace (Red Local)',
+            protos: 'Ethernet · Wi-Fi',
+            desc: 'Entrega el frame dentro de la LAN usando MACs. Opera hop a hop — no conoce la ruta completa.',
+            soc:  'ARP spoofing y MAC flooding son ataques MITM a esta capa, difíciles de detectar sin monitoreo de capa 2.',
+            ex:   'Src MAC: AA:BB:CC:DD:EE:FF\nDst MAC: 11:22:33:44:55:66\nEthertype: 0x0800 (IPv4)',
+            seg:  'ETH HDR'
+        }
+    ];
+
+    let currentMode = 'send';
+    let openLayer   = null;
+
+    function rgba(hex, a) {
+        const r = parseInt(hex.slice(1,3),16),
+              g = parseInt(hex.slice(3,5),16),
+              b = parseInt(hex.slice(5,7),16);
+        return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function setMode(m) {
+        currentMode = m;
+        document.getElementById('btn-send').classList.toggle('active', m === 'send');
+        document.getElementById('btn-recv').classList.toggle('active', m === 'recv');
+        renderLayers(); renderPacket();
+    }
+
+    function toggleLayer(id) {
+        openLayer = openLayer === id ? null : id;
+        renderLayers(); renderPacket();
+    }
+
+    function renderLayers() {
+        const layers = currentMode === 'send' ? LAYERS : [...LAYERS].reverse();
+        document.getElementById('layer-stack').innerHTML = layers.map((l, i) => `
+            <div class="layer-card ${openLayer === l.id ? 'open' : ''}"
+                 style="background:${rgba(l.color,.07)};border-color:${rgba(l.color,.28)};"
+                 onclick="toggleLayer('${l.id}')">
+                <div class="layer-header-row">
+                    <div class="layer-badge" style="background:${l.color}">${i + 1}</div>
+                    <div class="layer-name"  style="color:${l.color}">${l.name}</div>
+                    <div class="layer-protos">${l.protos}</div>
+                    <span class="layer-chev">▶</span>
+                </div>
+                <div class="layer-body">
+                    <div class="layer-body-inner">
+                        <p>${l.desc}</p>
+                        <pre style="border-color:${l.color}">${l.ex}</pre>
+                        <div class="soc-mini">⚑ SOC: ${l.soc}</div>
+                    </div>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderPacket() {
+        const segs = [
+            { label:'ETH HDR', id:'link',     color:'#ffb86c', style:'flex:0 0 58px' },
+            { label:'IP HDR',  id:'net',      color:'#50fa7b', style:'flex:0 0 52px' },
+            { label:'TCP HDR', id:'trans',    color:'#8be9fd', style:'flex:0 0 58px' },
+            { label:'DATOS',   id:'app',      color:null,      style:'flex:1',  data:true },
+            { label:'FCS',     id:'link-fcs', color:'#ffb86c', style:'flex:0 0 34px' }
+        ];
+        document.getElementById('pkt-bar').innerHTML = segs.map(s => {
+            const hl = openLayer && (s.id === openLayer || (s.id === 'link-fcs' && openLayer === 'link'));
+            return `<div class="pkt-seg ${s.data ? 'data' : ''} ${hl ? 'hl' : ''}"
+                         style="${s.style};${s.color ? `background:${rgba(s.color, hl ? .65 : .32)};` : ''}"
+                         title="${s.label}">${s.label}</div>`;
+        }).join('');
+
+        if (currentMode === 'send') {
+            document.getElementById('pkt-fl').textContent = '↑ App genera datos';
+            document.getElementById('pkt-fr').textContent = 'Enlace entrega frame ↓';
+        } else {
+            document.getElementById('pkt-fl').textContent = '↑ App consume datos';
+            document.getElementById('pkt-fr').textContent = 'Enlace recibe frame ↓';
+        }
+    }
+
+    renderLayers(); renderPacket();
+
+    /* ═══════════════════════════════════════════════════════
+       SECCIÓN 2 — THREE-WAY HANDSHAKE
+    ═══════════════════════════════════════════════════════ */
+    const HS = [
+        { dir:'right', label:'SYN',     color:'#8be9fd', det:'Cliente → Servidor | seq=0, SYN=1 | "Quiero conectarme, mi secuencia empieza en 0"' },
+        { dir:'left',  label:'SYN+ACK', color:'#50fa7b', det:'Servidor → Cliente | seq=0, ack=1, SYN=1 | "Acepto. Mi seq=0, confirmo tu seq+1=1"' },
+        { dir:'right', label:'ACK',     color:'#ffb86c', det:'Cliente → Servidor | ack=1, ACK=1 | "Confirmado. Conexión lista."' }
+    ];
+    const HS_INFO = [
+        'Presiona "Siguiente paso" para iniciar el handshake.',
+        '📤 Paso 1/3 — SYN: El cliente elige un número de secuencia aleatorio (ISN) y lo envía al servidor.',
+        '📥 Paso 2/3 — SYN+ACK: El servidor acepta, anuncia su propio ISN y confirma el seq del cliente (+1).',
+        '📤 Paso 3/3 — ACK: El cliente confirma el seq del servidor. ¡Conexión establecida en ambos lados!'
+    ];
+
+    let hsStep = 0;
+
+    function renderHS() {
+        const TOPS = [52, 120, 188];
+        let arrows = HS.map((s, i) => {
+            const isRight = s.dir === 'right';
+            return `<div class="hs-step ${i < hsStep ? 'vis' : ''}" style="top:${TOPS[i]}px;">
+                        <div class="hs-arrow" style="flex-direction:${isRight ? 'row' : 'row-reverse'}">
+                            <div class="hs-line" style="background:${s.color};opacity:.55"></div>
+                            <div class="hs-tag ${isRight ? 'hs-tip-r' : 'hs-tip-l'}" style="background:${s.color}">${s.label}</div>
+                            <div class="hs-line" style="background:${s.color};opacity:.55"></div>
+                        </div>
+                        <div class="hs-det">${s.det}</div>
+                    </div>`;
+        }).join('');
+
+        document.getElementById('hs-grid').innerHTML = `
+            <div class="hs-actor">
+                <div class="hs-actor-box" style="background:#44475a;color:#8be9fd;">💻 Cliente</div>
+                <div class="hs-actor-line"></div>
+            </div>
+            <div class="hs-mid" style="position:relative;min-height:260px;">${arrows}</div>
+            <div class="hs-actor">
+                <div class="hs-actor-box" style="background:#44475a;color:#50fa7b;">🖥️ Servidor</div>
+                <div class="hs-actor-line"></div>
+            </div>`;
+
+        document.getElementById('hs-ok').classList.toggle('vis', hsStep >= 3);
+        document.getElementById('hs-info').textContent = HS_INFO[hsStep];
+    }
+
+    function hsNext()  { if (hsStep < 3) { hsStep++; renderHS(); } }
+    function hsReset() { hsStep = 0; renderHS(); }
+
+    renderHS();
+
+    /* ═══════════════════════════════════════════════════════
+       SECCIÓN 3 — SLIDING WINDOW
+    ═══════════════════════════════════════════════════════ */
+    const SW_TOTAL = 12;
+    let swWindow  = 4;
+    let swAcked   = 0;
+    let swSent    = 0;
+    let swDropped = false;
+
+    function swRender() {
+        let sHTML = '', rHTML = '';
+        for (let i = 0; i < SW_TOTAL; i++) {
+            let cls = 'waiting';
+            if      (i < swAcked)                  cls = 'acked';
+            else if (swDropped && i === swAcked)    cls = 'dropped';
+            else if (i < swSent)                   cls = 'inflight';
+            sHTML += `<div class="sw-pkt ${cls}">P${i+1}</div>`;
+            if (i < swAcked) rHTML += `<div class="sw-pkt acked">P${i+1}</div>`;
+        }
+        document.getElementById('sw-sender').innerHTML   = sHTML;
+        document.getElementById('sw-receiver').innerHTML = rHTML;
+
+        const pct = Math.round((swAcked / SW_TOTAL) * 100);
+        document.getElementById('sw-fill').style.width    = pct + '%';
+        document.getElementById('sw-buf-pct').textContent = pct + '%';
+        document.getElementById('sw-recv-cnt').textContent = swAcked;
+        document.getElementById('sw-rwnd').textContent    = swWindow;
+    }
+
+    function swSetWindow(v) {
+        swWindow = parseInt(v);
+        document.getElementById('sw-win-val').textContent = v;
+        swRender();
+    }
+
+    function swSend() {
+        if (swSent >= SW_TOTAL || swDropped) return;
+        const limit = Math.min(SW_TOTAL, swAcked + swWindow);
+        if (swSent >= limit) return;
+        swSent = limit;
+        swRender();
+        setTimeout(() => { swAcked = swSent; swRender(); }, 900);
+    }
+
+    function swDrop() {
+        if (swSent <= swAcked || swDropped) return;
+        swDropped = true;
+        swRender();
+        setTimeout(() => {
+            swDropped = false;
+            swSent    = swAcked; // retransmit from last acked
+            swRender();
+        }, 1600);
+    }
+
+    function swReset() { swAcked = 0; swSent = 0; swDropped = false; swRender(); }
+
+    swRender();
+
+    /* ═══════════════════════════════════════════════════════
+       SECCIÓN 4 — ROUTING
+    ═══════════════════════════════════════════════════════ */
+    const NODES = [
+        { id:'pc',  label:'PC Origen', ip:'192.168.1.10', icon:'💻', router:false },
+        { id:'r1',  label:'Router 1',  ip:'10.0.1.1',     icon:'🔀', router:true  },
+        { id:'r2',  label:'Router 2',  ip:'10.0.2.1',     icon:'🔀', router:true  },
+        { id:'r3',  label:'Router 3',  ip:'10.0.3.1',     icon:'🔀', router:true  },
+        { id:'srv', label:'Servidor',  ip:'10.3.0.10',    icon:'🖥️', router:false }
+    ];
+
+    const RT = {
+        r1: [
+            { dest:'192.168.1.0/24', hop:'local',         iface:'eth0' },
+            { dest:'10.0.0.0/8',     hop:'10.0.2.1 (R2)', iface:'eth1' },
+            { dest:'10.3.0.0/24',    hop:'10.0.2.1 (R2)', iface:'eth1', match:true },
+            { dest:'0.0.0.0/0',      hop:'10.0.2.1 (R2)', iface:'eth1' }
+        ],
+        r2: [
+            { dest:'10.0.2.0/24',  hop:'local',         iface:'eth0' },
+            { dest:'10.3.0.0/24',  hop:'10.0.3.1 (R3)', iface:'eth1', match:true },
+            { dest:'0.0.0.0/0',    hop:'10.0.3.1 (R3)', iface:'eth1' }
+        ],
+        r3: [
+            { dest:'10.0.3.0/24', hop:'local', iface:'eth0' },
+            { dest:'10.3.0.0/24', hop:'local', iface:'eth1', match:true },
+            { dest:'0.0.0.0/0',   hop:'10.0.2.1', iface:'eth0' }
+        ]
+    };
+
+    const ROUTE_LOG = [
+        '',
+        '📦 Paquete sale de 192.168.1.10 → destino 10.3.0.10, TTL=64',
+        '🔀 R1: lookup 10.3.0.10 → match 10.3.0.0/24 → reenvía a R2, TTL=63',
+        '🔀 R2: lookup 10.3.0.10 → match 10.3.0.0/24 → reenvía a R3, TTL=62',
+        '✅ R3: 10.3.0.10 es local → entrega al servidor. TTL=61. ¡Paquete recibido!'
+    ];
+
+    let routeStep = 0;
+    let selRouter = null;
+
+    function renderTopo() {
+        let html = '';
+        NODES.forEach((n, i) => {
+            html += `<div class="topo-node ${routeStep === i ? 'pkt' : ''} ${selRouter === n.id ? 'sel' : ''}"
+                         onclick="selectRouter('${n.id}')">
+                        <div class="topo-icon">${n.icon}</div>
+                        <div class="topo-lbl">${n.label}</div>
+                        <div class="topo-ip">${n.ip}</div>
+                    </div>`;
+            if (i < NODES.length - 1)
+                html += `<div class="topo-edge ${i < routeStep ? 'act' : ''}"></div>`;
+        });
+        document.getElementById('topo-row').innerHTML = html;
+    }
+
+    function selectRouter(id) {
+        selRouter = id;
+        renderTopo();
+        const node = NODES.find(n => n.id === id);
+        const rt   = RT[id];
+        document.getElementById('rt-title').textContent =
+            rt ? `Tabla de rutas: ${node.label} (${node.ip}) — destino 10.3.0.10`
+               : `${node.label} — host final, sin tabla de rutas`;
+        if (!rt) { document.getElementById('rt-content').innerHTML = '<p style="color:#6272a4;font-size:0.78rem;">Este nodo es un host final.</p>'; return; }
+        document.getElementById('rt-content').innerHTML = `
+            <table class="rt-table">
+                <thead><tr><th>Destino</th><th>Next Hop</th><th>Iface</th><th></th></tr></thead>
+                <tbody>${rt.map(r => `
+                    <tr class="${r.match ? 'match' : ''}">
+                        <td>${r.dest}</td><td>${r.hop}</td><td>${r.iface}</td>
+                        <td>${r.match ? '✓ mejor match' : ''}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
+    }
+
+    function updateTTL() {
+        const hops = Math.max(0, routeStep - 1);
+        const ttl  = 64 - hops;
+        const el   = document.getElementById('ttl-num');
+        el.textContent  = ttl;
+        el.className    = 'ttl-num' + (ttl < 10 ? ' danger' : ttl < 30 ? ' warn' : '');
+        document.getElementById('ttl-status').textContent =
+            routeStep === 0             ? 'Paquete en origen' :
+            routeStep === NODES.length-1 ? '✓ Paquete entregado al servidor' :
+            `Salto ${routeStep}: en ${NODES[routeStep].label} — TTL decrementado a ${ttl}`;
+    }
+
+    function routeNext() {
+        if (routeStep >= NODES.length - 1) return;
+        routeStep++;
+        renderTopo(); updateTTL();
+        document.getElementById('route-log').textContent = ROUTE_LOG[routeStep] || '';
+        if (NODES[routeStep].router) selectRouter(NODES[routeStep].id);
+    }
+
+    function routeReset() {
+        routeStep = 0; selRouter = null;
+        renderTopo(); updateTTL();
+        document.getElementById('rt-title').textContent   = 'Selecciona un router para ver su tabla de rutas';
+        document.getElementById('rt-content').innerHTML   = '';
+        document.getElementById('route-log').textContent  = '';
+    }
+
+    renderTopo(); updateTTL();
+    </script>
+</body>
+</html>
